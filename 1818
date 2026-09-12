@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>아르낙 탐험일지 - 점수 계산기</title>
+  <style>
+    :root {
+      --deep-teal: #173F46;
+      --bg-dark: #0f272c;
+      --app-bg: #123238;
+      --card-bg: #173F46;
+      --card-bg-active: #1d4d55;
+      --sand: #D8B77A;
+      --gold: #B88A3B;
+      --gold-light: #f3d489;
+      --border-teal: #245862;
+      --text-light: #e6f0f2;
+      --text-muted: #95b3b9;
+      --danger: #f87171;
+      --success: #34d399;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--app-bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      box-shadow: 0 0 30px rgba(0,0,0,0.6);
+      position: relative;
+      border-left: 1px solid var(--border-teal);
+      border-right: 1px solid var(--border-teal);
+      overflow: hidden;
+    }
+
+    /* 공통 헤더 */
+    .app-header {
+      background: #0b1f23;
+      color: var(--sand);
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-teal);
+    }
+    .header-title-wrapper {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .app-header h1 { font-size: 1.1rem; font-weight: bold; letter-spacing: -0.5px; color: var(--sand); }
+    .header-author { font-size: 0.72rem; color: var(--text-muted); font-weight: normal; }
+    
+    .header-btns { display: flex; gap: 8px; }
+    .btn-icon {
+      background: var(--deep-teal);
+      border: 1px solid var(--gold);
+      color: var(--sand);
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .btn-icon:active { background: var(--gold); color: #0f272c; }
+
+    /* 1. 설정 화면 */
+    .setup-screen {
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .setup-title-box { text-align: center; margin-top: 6px; }
+    .setup-title-box h2 { color: var(--sand); font-size: 1.4rem; margin-bottom: 4px; font-weight: bold; }
+    .setup-title-box p { font-size: 0.85rem; color: var(--text-muted); }
+
+    .section-title {
+      font-weight: bold;
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+      color: var(--sand);
+      border-left: 3px solid var(--gold);
+      padding-left: 8px;
+    }
+    
+    .checkbox-card {
+      background: var(--card-bg);
+      border: 2px solid var(--border-teal);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .checkbox-card.selected {
+      border-color: var(--sand);
+      background: var(--card-bg-active);
+      box-shadow: 0 0 12px rgba(216, 183, 122, 0.15);
+    }
+    .checkbox-card input { width: 18px; height: 18px; accent-color: var(--gold); }
+    .card-info { display: flex; flex-direction: column; }
+    .card-info strong { font-size: 0.95rem; color: var(--text-light); }
+    .card-info span { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+
+    .player-count-btns { display: flex; gap: 8px; }
+    .btn-count {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid var(--border-teal);
+      background: var(--card-bg);
+      color: var(--text-light);
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-count.active {
+      border-color: var(--gold);
+      background: var(--sand);
+      color: #0f272c;
+    }
+
+    .player-names-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .player-name-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-teal);
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+    
+    /* 동그란 색상 선택기 스타일 */
+    .color-picker-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .color-opt-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s, opacity 0.2s;
+      outline: none;
+      position: relative;
+    }
+    .color-opt-btn:hover {
+      transform: scale(1.15);
+    }
+    .color-opt-btn.selected {
+      border-color: #fff;
+      box-shadow: 0 0 6px rgba(255,255,255,0.8);
+      transform: scale(1.15);
+    }
+    .color-opt-btn.disabled {
+      opacity: 0.15;
+      cursor: not-allowed;
+      transform: scale(0.85);
+      pointer-events: none;
+    }
+
+    .player-name-input {
+      width: 120px;
+      background: #0a1b1e;
+      color: #fff;
+      border: 1px solid var(--border-teal);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .player-name-input:focus {
+      border-color: var(--sand);
+      box-shadow: 0 0 0 2px rgba(216, 183, 122, 0.2);
+    }
+
+    .btn-start {
+      margin-top: 10px;
+      background: linear-gradient(135deg, var(--sand), var(--gold));
+      color: #0f272c;
+      border: none;
+      padding: 16px;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(184, 138, 59, 0.3);
+      transition: all 0.2s;
+    }
+    .btn-start:active { opacity: 0.9; transform: scale(0.99); }
+
+    /* 2. 단계별 위자드 화면 */
+    .wizard-screen {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      padding-bottom: 85px;
+    }
+
+    .progress-bar-container {
+      background: #0a1b1e;
+      height: 6px;
+      width: 100%;
+    }
+    .progress-bar {
+      background: linear-gradient(90deg, var(--gold), var(--sand));
+      height: 100%;
+      width: 10%;
+      transition: width 0.3s ease;
+    }
+    .step-header {
+      padding: 14px 20px 10px;
+      border-bottom: 1px solid var(--border-teal);
+      background: #0e272b;
+    }
+    .step-counter { font-size: 0.8rem; font-weight: bold; color: var(--gold); margin-bottom: 2px; }
+    .step-title { font-size: 1.15rem; font-weight: bold; color: var(--sand); margin-bottom: 4px; }
+    .step-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.35; }
+
+    /* 암흑 석판 전체 설정 박스 */
+    .global-slate-setting {
+      background: #0d2226;
+      border: 1px solid var(--gold);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin: 12px 20px 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .global-slate-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--sand);
+    }
+    .slate-selector-btns {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-slate-opt {
+      flex: 1;
+      padding: 8px 4px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-teal);
+      color: var(--text-light);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .btn-slate-opt.active {
+      background: var(--sand);
+      color: #0f272c;
+      border-color: var(--gold);
+    }
+
+    .player-inputs-list {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .player-input-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-teal);
+      border-radius: 10px;
+      padding: 12px 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .player-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+    .player-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 4px rgba(0,0,0,0.4);
+    }
+
+    .input-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+    }
+    .input-row label { font-size: 0.85rem; color: var(--text-muted); }
+
+    .stepper { display: flex; align-items: center; gap: 6px; }
+    .btn-step {
+      width: 32px; height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--border-teal);
+      background: #0d2226;
+      color: var(--sand);
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn-step:active { background: var(--border-teal); }
+    
+    .stepper-input {
+      width: 52px;
+      height: 32px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 1.05rem;
+      color: var(--sand);
+      background: #0a1b1e;
+      border: 1px solid var(--border-teal);
+      border-radius: 6px;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+    .stepper-input::-webkit-outer-spin-button,
+    .stepper-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .stepper-input:focus {
+      border-color: var(--sand);
+      box-shadow: 0 0 0 2px rgba(216, 183, 122, 0.2);
+    }
+
+    /* 하단 고정 스코어바 & 네비게이션 */
+    .wizard-bottom-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: #112c31;
+      border-top: 1px solid var(--border-teal);
+      box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+    }
+    .mini-scores {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 5px 8px;
+      background: #0a1b1e;
+      border-bottom: 1px solid var(--border-teal);
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .mini-scores::-webkit-scrollbar { display: none; }
+    
+    .mini-chip {
+      background: var(--card-bg);
+      border: 1px solid var(--border-teal);
+      padding: 3px 6px;
+      border-radius: 8px;
+      font-size: 0.67rem;
+      white-space: nowrap;
+      font-weight: 500;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      flex-shrink: 0;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
+    }
+    .mini-chip b { color: var(--sand); }
+    
+    .mini-chip.rank-first {
+      background: #1d464e;
+      border: 1px solid var(--gold);
+      padding: 3px 7px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      box-shadow: 0 0 6px rgba(216, 183, 122, 0.2);
+    }
+    .mini-chip.rank-first b {
+      font-size: 0.78rem;
+      font-weight: 900;
+      color: #fff;
+    }
+    .crown-icon { font-size: 0.7rem; }
+    
+    .nav-btns {
+      display: flex;
+      padding: 10px 16px;
+      gap: 10px;
+    }
+    .btn-nav {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-prev { background: var(--card-bg); color: var(--text-muted); border: 1px solid var(--border-teal); }
+    .btn-next { background: var(--sand); color: #0f272c; font-weight: 800; }
+
+    /* 3. 결과 화면 */
+    .result-screen {
+      padding: 20px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: center;
+      flex: 1;
+      overflow-y: auto;
+      animation: fadeInScale 0.5s ease-out forwards;
+    }
+    @keyframes fadeInScale {
+      0% { opacity: 0; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .result-top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .result-date { font-size: 0.85rem; color: var(--text-muted); }
+    .btn-edit-score {
+      background: var(--card-bg);
+      border: 1px solid var(--gold);
+      color: var(--sand);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-edit-score:active { background: var(--gold); color: #0f272c; }
+
+    .result-title { font-size: 1.35rem; font-weight: bold; color: var(--sand); margin-top: -4px; }
+
+    .winner-card {
+      width: 100%;
+      background: var(--card-bg);
+      border: 2px solid var(--gold);
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(216, 183, 122, 0.2);
+      animation: sprintFinish 0.6s cubic-bezier(0.25, 1.2, 0.5, 1) 0.1s both;
+    }
+    @keyframes sprintFinish {
+      0% { transform: translateX(-120vw); opacity: 0; }
+      70% { transform: translateX(12px); opacity: 1; }
+      85% { transform: translateX(-6px); }
+      100% { transform: translateX(0); opacity: 1; }
+    }
+
+    .winner-badge {
+      display: inline-block;
+      background: var(--gold);
+      color: #0f272c;
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .winner-name { font-size: 1.3rem; font-weight: 900; color: var(--text-light); }
+    .winner-score {
+      font-size: 2.1rem;
+      font-weight: 900;
+      color: var(--sand);
+      margin-top: 2px;
+      text-shadow: 0 0 10px rgba(216, 183, 122, 0.4);
+    }
+
+    /* 상세 순위 리스트 */
+    .rank-list { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+    .rank-item {
+      display: flex;
+      flex-direction: column;
+      background: var(--card-bg);
+      border: 1px solid var(--border-teal);
+      padding: 14px 16px;
+      border-radius: 10px;
+      animation: slideUpItem 0.4s ease-out both;
+      gap: 8px;
+    }
+    .rank-item:nth-child(1) { animation-delay: 0.2s; border-color: var(--gold); }
+    .rank-item:nth-child(2) { animation-delay: 0.25s; }
+    .rank-item:nth-child(3) { animation-delay: 0.3s; }
+    .rank-item:nth-child(4) { animation-delay: 0.35s; }
+
+    @keyframes slideUpItem {
+      0% { opacity: 0; transform: translateY(15px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .rank-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .rank-text-badge { font-weight: 800; color: var(--gold); width: 45px; font-size: 0.95rem; }
+    .rank-player-name { font-weight: bold; flex: 1; font-size: 1rem; color: var(--text-light); }
+    .rank-player-score {
+      font-weight: 900;
+      font-size: 1.25rem;
+      color: var(--sand);
+      text-shadow: 0 0 6px rgba(216, 183, 122, 0.2);
+    }
+
+    /* 칭호 영역 스타일 */
+    .player-titles-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(216, 183, 122, 0.25);
+    }
+    .title-badge-item {
+      display: flex;
+      flex-direction: column;
+      background: #0d2226;
+      border: 1px solid var(--border-teal);
+      border-radius: 6px;
+      padding: 6px 10px;
+    }
+    .title-header-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .title-badge-name {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--sand);
+    }
+    .title-badge-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+      line-height: 1.25;
+    }
+
+    /* 전체 공용 코멘트 입력 박스 */
+    .global-comment-box {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--border-teal);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .global-comment-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--sand);
+    }
+    .global-comment-input {
+      background: #0a1b1e;
+      color: #fff;
+      border: 1px solid var(--border-teal);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      outline: none;
+      width: 100%;
+    }
+    .global-comment-input:focus {
+      border-color: var(--sand);
+      box-shadow: 0 0 0 2px rgba(216, 183, 122, 0.2);
+    }
+
+    /* 사진 업로드 박스 스타일 */
+    .photo-upload-box {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--border-teal);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .photo-upload-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--sand);
+    }
+    .file-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-file-select {
+      background: #0d2226;
+      border: 1px solid var(--gold);
+      color: var(--sand);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-file-select:active { background: var(--gold); color: #0f272c; }
+    .photo-file-name {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+    .photo-preview-container {
+      display: none;
+      position: relative;
+      width: 100%;
+      max-height: 140px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border-teal);
+      background: #0a1b1e;
+    }
+    .photo-preview-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      max-height: 140px;
+      display: block;
+    }
+    .btn-remove-photo {
+      position: absolute;
+      top: 6px; right: 6px;
+      background: rgba(0,0,0,0.7);
+      color: var(--danger);
+      border: 1px solid var(--danger);
+      border-radius: 50%;
+      width: 24px; height: 24px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .result-btns { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: auto; padding-top: 10px;}
+    .btn-action {
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .btn-save-record { background: var(--gold); color: #0f272c; font-weight: 800; }
+    .btn-restart { background: var(--card-bg); color: var(--sand); border: 1px solid var(--border-teal); }
+
+    .confetti-container {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 50;
+    }
+    .confetti {
+      position: absolute;
+      top: -10px;
+      width: 8px;
+      height: 14px;
+      opacity: 0.9;
+      animation: fallConfetti linear forwards;
+    }
+    @keyframes fallConfetti {
+      0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg) scale(0.6); opacity: 0; }
+    }
+
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center;
+      z-index: 1000; padding: 16px;
+    }
+    .modal-card {
+      background: #112c31; border: 1px solid var(--border-teal); border-radius: 12px; width: 100%; max-width: 420px;
+      max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; color: var(--text-light);
+    }
+    .modal-header {
+      padding: 14px 16px; background: #0a1b1e; color: var(--sand);
+      display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-teal);
+    }
+    .modal-body { padding: 16px; overflow-y: auto; flex: 1; }
+    
+    .history-card {
+      background: var(--card-bg); border: 1px solid var(--border-teal); border-radius: 8px;
+      padding: 12px 14px; margin-bottom: 10px;
+    }
+    .history-header { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px; border-bottom: 1px dashed rgba(216,183,122,0.2); padding-bottom: 4px; }
+    .history-ranks { display: flex; flex-direction: column; gap: 8px; }
+    .history-rank-row { display: flex; flex-direction: column; background: #0d2226; border: 1px solid var(--border-teal); border-radius: 6px; padding: 8px 10px; gap: 4px; }
+    .history-rank-main { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; font-weight: bold; }
+    .rank-label { color: var(--gold); font-weight: bold; margin-right: 6px; }
+    .history-rank-main b { color: var(--sand); font-size: 1.05rem; }
+    .history-titles-inline { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+    .history-title-chip { font-size: 0.75rem; background: #173F46; border: 1px solid var(--border-teal); padding: 2px 6px; border-radius: 4px; color: var(--sand); font-weight: 600; }
+    
+    .history-global-comment { font-size: 0.8rem; color: var(--text-muted); font-style: italic; background: #0a1b1e; padding: 6px 10px; border-radius: 4px; margin-top: 8px; border-left: 2px solid var(--gold); }
+    
+    .history-photo-thumb {
+      margin-top: 8px;
+      width: 100%;
+      max-height: 100px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border-teal);
+      background: #0a1b1e;
+      cursor: pointer;
+    }
+    .history-photo-thumb img {
+      width: 100%;
+      height: 100px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .btn-del { color: var(--danger); border: none; background: transparent; cursor: pointer; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+
+  <div class="app-container" id="appContainer">
+    <!-- 헤더 -->
+    <header class="app-header">
+      <div class="header-title-wrapper">
+        <h1>아르낙 탐험일지</h1>
+        <span class="header-author">도아깜몬</span>
+      </div>
+      <div class="header-btns">
+        <button class="btn-icon" onclick="openHistory()">저장 기록</button>
+      </div>
+    </header>
+
+    <!-- 1. 설정 화면 -->
+    <div id="setupScreen" class="setup-screen">
+      <div class="setup-title-box">
+        <h2>탐험 준비</h2>
+        <p>확장 옵션 및 참여 인원수를 선택하십시오.</p>
+      </div>
+
+      <div>
+        <div class="section-title">확장 선택</div>
+        
+        <div class="checkbox-card" id="cardOwl" onclick="toggleExpansion('owl')">
+          <div class="card-info">
+            <strong>올빼미 신전</strong>
+            <span>등불 단계 추가 · 동점 시 선착순 및 조사 점수합</span>
+          </div>
+          <input type="checkbox" id="chkOwl" pointer-events="none">
+        </div>
+
+        <div class="checkbox-card" id="cardSpider" onclick="toggleExpansion('spider')">
+          <div class="card-info">
+            <strong>거미 신전</strong>
+            <span>암흑 석판 감점 · 제단 점수 추가</span>
+          </div>
+          <input type="checkbox" id="chkSpider" pointer-events="none">
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">참여 인원</div>
+        <div class="player-count-btns">
+          <button class="btn-count active" onclick="setPlayerCount(2)">2명</button>
+          <button class="btn-count" onclick="setPlayerCount(3)">3명</button>
+          <button class="btn-count" onclick="setPlayerCount(4)">4명</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">탐험가 이름 등록</div>
+        <div id="playerNamesSetup" class="player-names-container"></div>
+      </div>
+
+      <button class="btn-start" onclick="startCalculator()">점수 계산 시작</button>
+    </div>
+
+    <!-- 2. 단계별 위자드 화면 -->
+    <div id="wizardScreen" class="wizard-screen" style="display: none;">
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <div class="step-header">
+        <div class="step-counter" id="stepCounter">1 / 7</div>
+        <div class="step-title" id="stepTitle">돋보기 토큰</div>
+        <div class="step-desc" id="stepDesc">설명 문구</div>
+      </div>
+
+      <!-- 동적 헤더 설정 영역 (예: 암흑 석판 전체 설정) -->
+      <div id="stepCustomHeader" style="display: none;"></div>
+
+      <div class="player-inputs-list" id="playerInputsList"></div>
+
+      <!-- 하단 고정 스코어바 & 네비게이션 -->
+      <div class="wizard-bottom-bar">
+        <div class="mini-scores" id="miniScores"></div>
+        <div class="nav-btns">
+          <button class="btn-nav btn-prev" onclick="prevStep()">이전</button>
+          <button class="btn-nav btn-next" id="btnNext" onclick="nextStep()">다음</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 결과 화면 -->
+    <div id="resultScreen" class="result-screen" style="display: none;">
+      <div class="result-top-bar">
+        <div class="result-date" id="resultDate"></div>
+        <button class="btn-edit-score" onclick="editScores()">점수 수정</button>
+      </div>
+      <div class="result-title">탐험 최종 기록</div>
+
+      <div class="winner-card">
+        <div class="winner-badge">최종 승자</div>
+        <div class="winner-name" id="winnerName">플레이어 1</div>
+        <div class="winner-score" id="winnerScore">0점</div>
+      </div>
+
+      <div class="rank-list" id="rankList"></div>
+
+      <!-- 전체 코멘트 입력란 -->
+      <div class="global-comment-box">
+        <label class="global-comment-label" for="globalCommentInput">원정 한 줄 코멘트</label>
+        <input type="text" id="globalCommentInput" class="global-comment-input" placeholder="이번 탐험 전체 소감을 적어보세요 (예: 아슬아슬했던 전설의 탐험!)">
+      </div>
+
+      <!-- 사진 업로드 박스 -->
+      <div class="photo-upload-box">
+        <label class="photo-upload-label">원정 기념 사진 첨부</label>
+        <div class="file-input-wrapper">
+          <button type="button" class="btn-file-select" onclick="document.getElementById('photoFileInput').click()">사진 파일 선택</button>
+          <span id="photoFileName" class="photo-file-name">선택된 파일 없음</span>
+          <input type="file" id="photoFileInput" accept="image/*" style="display: none;" onchange="handlePhotoSelect(event)">
+        </div>
+        <div id="photoPreviewContainer" class="photo-preview-container">
+          <img id="photoPreviewImg" src="" alt="미리보기">
+          <button type="button" class="btn-remove-photo" onclick="removePhoto()">✕</button>
+        </div>
+      </div>
+
+      <div class="result-btns">
+        <button class="btn-action btn-save-record" onclick="saveRecord()">원정 기록하기</button>
+        <button class="btn-action btn-restart" onclick="resetToSetup()">새로운 모험 시작</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 저장 기록 모달 -->
+  <div id="historyModal" class="modal-overlay" style="display: none;" onclick="closeHistory()">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>저장된 원정 기록</h3>
+        <button class="btn-icon" onclick="closeHistory()">✕</button>
+      </div>
+      <div class="modal-body" id="historyList"></div>
+    </div>
+  </div>
+
+  <script>
+    // 기본 색상 정의 (0: 빨강, 1: 파랑, 2: 초록, 3: 노랑)
+    const COLOR_PALETTE = [
+      { id: 'red', hex: '#f87171', name: '빨강' },
+      { id: 'blue', hex: '#60a5fa', name: '파랑' },
+      { id: 'green', hex: '#4ade80', name: '초록' },
+      { id: 'yellow', hex: '#facc15', name: '노랑' }
+    ];
+
+    let setup = {
+      owl: false,
+      spider: false,
+      playerCount: 2
+    };
+
+    // 현재 플레이어별 선택된 색상 인덱스 배열 (기본 설정: P1->빨강(0), P2->파랑(1), P3->초록(2), P4->노랑(3))
+    let selectedColorIndexes = [0, 1, 2, 3];
+
+    let players = [];
+    let currentStepIdx = 0;
+    let wizardSteps = [];
+    let uploadedPhotoBase64 = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderPlayerNameInputs();
+    });
+
+    function toggleExpansion(type) {
+      if (type === 'owl') {
+        setup.owl = !setup.owl;
+        if (setup.owl) setup.spider = false;
+      } else if (type === 'spider') {
+        setup.spider = !setup.spider;
+        if (setup.spider) setup.owl = false;
+      }
+
+      document.getElementById('chkOwl').checked = setup.owl;
+      document.getElementById('chkSpider').checked = setup.spider;
+
+      document.getElementById('cardOwl').classList.toggle('selected', setup.owl);
+      document.getElementById('cardSpider').classList.toggle('selected', setup.spider);
+    }
+
+    function setPlayerCount(count) {
+      setup.playerCount = count;
+      document.querySelectorAll('.btn-count').forEach((btn, idx) => {
+        btn.classList.toggle('active', (idx + 2) === count);
+      });
+      renderPlayerNameInputs();
+    }
+
+    function selectPlayerColor(playerIdx, colorIdx) {
+      if (selectedColorIndexes[playerIdx] === colorIdx) return;
+
+      selectedColorIndexes[playerIdx] = colorIdx;
+      
+      // 다른 플레이어들과 색상 중복 발생 시 중복 해제 및 가용한 최우선 색상으로 자동 할당
+      for (let i = 0; i < setup.playerCount; i++) {
+        if (i !== playerIdx && selectedColorIndexes[i] === colorIdx) {
+          const usedByOthers = selectedColorIndexes.filter((cIdx, pIdx) => pIdx !== i && pIdx < setup.playerCount);
+          const availableIdx = COLOR_PALETTE.findIndex((_, idx) => !usedByOthers.includes(idx));
+          if (availableIdx !== -1) {
+            selectedColorIndexes[i] = availableIdx;
+          }
+        }
+      }
+      renderPlayerNameInputs();
+    }
+
+    function renderPlayerNameInputs() {
+      const container = document.getElementById('playerNamesSetup');
+      let html = '';
+
+      for (let i = 0; i < setup.playerCount; i++) {
+        const existingVal = document.getElementById(`nameInput_${i + 1}`)?.value || `플레이어 ${i + 1}`;
+        const currentColorIdx = selectedColorIndexes[i];
+
+        // 다른 플레이어가 이미 점유 중인 색상 구하기
+        const takenByOthers = selectedColorIndexes.filter((cIdx, pIdx) => pIdx !== i && pIdx < setup.playerCount);
+
+        let colorPickerHtml = '<div class="color-picker-group">';
+        COLOR_PALETTE.forEach((colorObj, cIdx) => {
+          const isSelected = (currentColorIdx === cIdx);
+          const isDisabled = takenByOthers.includes(cIdx);
+          
+          colorPickerHtml += `
+            <button type="button" 
+              class="color-opt-btn ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}" 
+              style="background-color: ${colorObj.hex};" 
+              title="${colorObj.name}"
+              onclick="selectPlayerColor(${i}, ${cIdx})">
+            </button>
+          `;
+        });
+        colorPickerHtml += '</div>';
+
+        html += `
+          <div class="player-name-row">
+            ${colorPickerHtml}
+            <input type="text" id="nameInput_${i + 1}" class="player-name-input" value="${existingVal}" placeholder="플레이어 ${i + 1}">
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    }
+
+    function initSteps() {
+      wizardSteps = [
+        {
+          id: 'magnifier',
+          title: '돋보기 토큰',
+          desc: '돋보기 토큰(비밀 통로 포함)이 위치한 트랙 칸의 점수를 입력하십시오.',
+          fields: [{ key: 'magnifierScore', label: '돋보기 위치 점수' }]
+        },
+        {
+          id: 'notebook',
+          title: '수첩 토큰',
+          desc: '수첩 토큰이 위치한 트랙 칸의 점수를 입력하십시오.',
+          fields: [{ key: 'notebookScore', label: '수첩 위치 점수' }]
+        }
+      ];
+
+      if (setup.owl) {
+        wizardSteps.push({
+          id: 'lantern',
+          title: '등불 토큰 (올빼미 신전)',
+          desc: '등불 토큰이 위치한 트랙 칸의 점수를 입력하십시오.',
+          fields: [{ key: 'lanternScore', label: '등불 위치 점수' }]
+        });
+      }
+
+      wizardSteps.push({
+        id: 'templeTiles',
+        title: '신전 타일',
+        desc: '획득한 신전 타일(2점, 6점, 11점 등) 점수의 총합을 입력하십시오.',
+        fields: [{ key: 'templeTilesScore', label: '신전 타일 점수 합계' }]
+      });
+
+      wizardSteps.push({
+        id: 'idols',
+        title: '우상',
+        desc: '보급 상자 및 우상 칸에 보유 중인 우상 수량을 입력하십시오. (1개당 3점)',
+        fields: [{ key: 'idolsCount', label: '우상 수량 (×3)', mul: 3 }]
+      });
+
+      wizardSteps.push({
+        id: 'emptyIdolSlots',
+        title: '비어 있는 우상 칸',
+        desc: '개인판 상단의 비어 있는 우상 칸 점수를 합산하여 입력하십시오.',
+        fields: [{ key: 'idolSlotsScore', label: '빈 우상 칸 점수 합계' }]
+      });
+
+      wizardSteps.push({
+        id: 'guardians',
+        title: '수호자',
+        desc: '제압한 수호자 타일 수량을 입력하십시오. (1장당 5점)',
+        fields: [{ key: 'guardiansCount', label: '제압한 수호자 수량 (×5)', mul: 5 }]
+      });
+
+      wizardSteps.push({
+        id: 'cards',
+        title: '아이템 · 유물 카드',
+        desc: '덱, 손, 버린 더미의 카드를 점수대별(1점, 2점, 3점)로 수량을 입력하십시오. (추방된 카드 제외)',
+        fields: [
+          { key: 'cards1', label: '1점 카드 수량 (×1)', mul: 1 },
+          { key: 'cards2', label: '2점 카드 수량 (×2)', mul: 2 },
+          { key: 'cards3', label: '3점 카드 수량 (×3)', mul: 3 }
+        ]
+      });
+
+      wizardSteps.push({
+        id: 'fear',
+        title: '공포',
+        desc: '보유 중인 공포 카드(-1점) 및 공포 타일(-2점) 수량을 입력하십시오.',
+        fields: [
+          { key: 'fearCards', label: '공포 카드 수량 (-1점)', mul: -1 },
+          { key: 'fearTiles', label: '공포 타일 수량 (-2점)', mul: -2 }
+        ]
+      });
+
+      if (setup.spider) {
+        wizardSteps.push({
+          id: 'darkSlate',
+          title: '암흑 석판 (거미 신전)',
+          desc: '전체 공통 적용될 암흑 석판 점수(-X)를 선택하고 플레이어별 수량을 입력하세요.',
+          isSlateStep: true,
+          fields: [{ key: 'slateCount', label: '암흑 석판 수량' }]
+        });
+
+        wizardSteps.push({
+          id: 'altar',
+          title: '제단 야망 (거미 신전)',
+          desc: '획득한 제단 점수의 합계를 입력하십시오.',
+          fields: [{ key: 'altarScore', label: '제단 점수 합계' }]
+        });
+      }
+    }
+
+    function startCalculator() {
+      initSteps();
+      players = [];
+      for (let i = 1; i <= setup.playerCount; i++) {
+        const inputVal = document.getElementById(`nameInput_${i}`)?.value.trim();
+        const name = inputVal || `플레이어 ${i}`;
+        const chosenColorHex = COLOR_PALETTE[selectedColorIndexes[i - 1]].hex;
+
+        players.push({
+          id: i,
+          name: name,
+          color: chosenColorHex,
+          scores: {},
+          slatePenaltyValue: -1
+        });
+      }
+
+      currentStepIdx = 0;
+      document.getElementById('setupScreen').style.display = 'none';
+      document.getElementById('wizardScreen').style.display = 'flex';
+      renderStep();
+    }
+
+    function renderStep() {
+      const step = wizardSteps[currentStepIdx];
+      const totalSteps = wizardSteps.length;
+
+      document.getElementById('progressBar').style.width = `${((currentStepIdx + 1) / totalSteps) * 100}%`;
+      document.getElementById('stepCounter').innerText = `${currentStepIdx + 1} / ${totalSteps}`;
+      document.getElementById('stepTitle').innerText = step.title;
+      document.getElementById('stepDesc').innerText = step.desc;
+
+      const btnNext = document.getElementById('btnNext');
+      btnNext.innerText = (currentStepIdx === totalSteps - 1) ? '결과 확인' : '다음';
+
+      const customHeader = document.getElementById('stepCustomHeader');
+      if (step.isSlateStep) {
+        customHeader.style.display = 'block';
+        const currentPenalty = players[0]?.slatePenaltyValue || -1;
+        customHeader.innerHTML = `
+          <div class="global-slate-setting">
+            <div class="global-slate-label">전체 적용할 암흑 석판 점수 선택 (-X점)</div>
+            <div class="slate-selector-btns">
+              <button class="btn-slate-opt ${currentPenalty === -1 ? 'active' : ''}" onclick="setGlobalSlatePenalty(-1)">-1점</button>
+              <button class="btn-slate-opt ${currentPenalty === -2 ? 'active' : ''}" onclick="setGlobalSlatePenalty(-2)">-2점</button>
+              <button class="btn-slate-opt ${currentPenalty === -3 ? 'active' : ''}" onclick="setGlobalSlatePenalty(-3)">-3점</button>
+              <button class="btn-slate-opt ${currentPenalty === -4 ? 'active' : ''}" onclick="setGlobalSlatePenalty(-4)">-4점</button>
+              <button class="btn-slate-opt ${currentPenalty === -5 ? 'active' : ''}" onclick="setGlobalSlatePenalty(-5)">-5점</button>
+            </div>
+          </div>
+        `;
+      } else {
+        customHeader.style.display = 'none';
+        customHeader.innerHTML = '';
+      }
+
+      const container = document.getElementById('playerInputsList');
+      container.innerHTML = players.map(p => {
+        let fieldsToRender = step.fields;
+        if (step.isSlateStep) {
+          const currentPenalty = p.slatePenaltyValue || -1;
+          fieldsToRender = [{ key: 'slateCount', label: `암흑 석판 (${currentPenalty}점) 수량` }];
+        }
+
+        return `
+          <div class="player-input-card">
+            <div class="player-label">
+              <span class="player-dot" style="background:${p.color}"></span>
+              ${p.name}
+            </div>
+            ${fieldsToRender.map(f => {
+              const val = p.scores[f.key] !== undefined ? p.scores[f.key] : 0;
+              return `
+                <div class="input-row">
+                  <label>${f.label}</label>
+                  <div class="stepper">
+                    <button class="btn-step" onclick="updateValue(${p.id}, '${f.key}', -1)">-</button>
+                    <input type="number" class="stepper-input" id="input_${p.id}_${f.key}" value="${val}" 
+                      onchange="setDirectValue(${p.id}, '${f.key}', this.value)"
+                      onfocus="this.select()">
+                    <button class="btn-step" onclick="updateValue(${p.id}, '${f.key}', 1)">+</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }).join('');
+
+      renderMiniScores();
+    }
+
+    function setGlobalSlatePenalty(val) {
+      players.forEach(p => {
+        p.slatePenaltyValue = val;
+      });
+      renderStep();
+    }
+
+    function updateValue(playerId, key, delta) {
+      const p = players.find(x => x.id === playerId);
+      if (p) {
+        const current = p.scores[key] || 0;
+        const newVal = Math.max(0, current + delta);
+        p.scores[key] = newVal;
+        
+        const inputElem = document.getElementById(`input_${playerId}_${key}`);
+        if (inputElem) inputElem.value = newVal;
+
+        renderMiniScores();
+      }
+    }
+
+    function setDirectValue(playerId, key, value) {
+      const p = players.find(x => x.id === playerId);
+      if (p) {
+        let parsed = parseInt(value, 10);
+        if (isNaN(parsed) || parsed < 0) parsed = 0;
+        p.scores[key] = parsed;
+        
+        const inputElem = document.getElementById(`input_${playerId}_${key}`);
+        if (inputElem) inputElem.value = parsed;
+
+        renderMiniScores();
+      }
+    }
+
+    function getPlayerTotal(p) {
+      let total = 0;
+      wizardSteps.forEach(step => {
+        if (step.isSlateStep) {
+          const count = p.scores['slateCount'] || 0;
+          const penalty = p.slatePenaltyValue || -1;
+          total += (count * penalty);
+        } else {
+          step.fields.forEach(f => {
+            const val = p.scores[f.key] || 0;
+            const mul = f.mul !== undefined ? f.mul : 1;
+            total += (val * mul);
+          });
+        }
+      });
+      return total;
+    }
+
+    function renderMiniScores() {
+      const miniScores = document.getElementById('miniScores');
+      
+      const sorted = [...players]
+        .map(p => ({ ...p, total: getPlayerTotal(p) }))
+        .sort((a, b) => b.total - a.total);
+
+      let html = '';
+      sorted.forEach((p, idx) => {
+        const isFirst = (idx === 0);
+        html += `
+          <div class="mini-chip ${isFirst ? 'rank-first' : ''}" data-player-id="${p.id}" style="order: ${idx};">
+            ${isFirst ? '<span class="crown-icon">👑</span>' : ''}
+            <span class="player-dot" style="background:${p.color}; width:8px; height:8px;"></span>
+            ${p.name}: <b>${p.total}점</b>
+          </div>
+        `;
+      });
+      miniScores.innerHTML = html;
+    }
+
+    function prevStep() {
+      if (currentStepIdx > 0) {
+        currentStepIdx--;
+        renderStep();
+      } else {
+        if (confirm('설정 화면으로 이동하시겠습니까?')) {
+          document.getElementById('wizardScreen').style.display = 'none';
+          document.getElementById('setupScreen').style.display = 'flex';
+        }
+      }
+    }
+
+    function nextStep() {
+      if (currentStepIdx < wizardSteps.length - 1) {
+        currentStepIdx++;
+        renderStep();
+      } else {
+        showResult();
+      }
+    }
+
+    function triggerConfetti() {
+      const container = document.getElementById('appContainer');
+      const confettiWrapper = document.createElement('div');
+      confettiWrapper.className = 'confetti-container';
+      container.appendChild(confettiWrapper);
+
+      const colors = ['#D8B77A', '#B88A3B', '#f87171', '#60a5fa', '#4ade80', '#facc15', '#ffffff'];
+      
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.width = (Math.random() * 6 + 6) + 'px';
+        confetti.style.height = (Math.random() * 10 + 10) + 'px';
+        
+        const duration = Math.random() * 1.2 + 1.2;
+        const delay = Math.random() * 0.4;
+        
+        confetti.style.animationDuration = `${duration}s`;
+        confetti.style.animationDelay = `${delay}s`;
+        
+        confettiWrapper.appendChild(confetti);
+      }
+
+      setTimeout(() => { confettiWrapper.remove(); }, 3000);
+    }
+
+    function calculatePlayerTitles(playersList) {
+      const catScores = playersList.map(p => {
+        const mag = p.scores['magnifierScore'] || 0;
+        const note = p.scores['notebookScore'] || 0;
+        const lan = p.scores['lanternScore'] || 0;
+        
+        const idols = (p.scores['idolsCount'] || 0) * 3;
+        const guardians = (p.scores['guardiansCount'] || 0) * 5;
+        const cards = ((p.scores['cards1'] || 0) * 1) + ((p.scores['cards2'] || 0) * 2) + ((p.scores['cards3'] || 0) * 3);
+        
+        const fearCount = (p.scores['fearCards'] || 0) + (p.scores['fearTiles'] || 0);
+        
+        let slates = 0;
+        if (setup.spider) {
+          const count = p.scores['slateCount'] || 0;
+          const penalty = p.slatePenaltyValue || -1;
+          slates = count * penalty;
+        }
+
+        return {
+          id: p.id,
+          generalTrack: mag + note,
+          owlTrack: mag + note + lan,
+          idols: idols,
+          guardians: guardians,
+          cards: cards,
+          fearCount: fearCount,
+          slates: slates
+        };
+      });
+
+      function getMaxIds(key) {
+        if (playersList.length === 0) return [];
+        let maxVal = -99999;
+        catScores.forEach(s => {
+          if (s[key] > maxVal) maxVal = s[key];
+        });
+        if (maxVal <= 0 && key !== 'slates') {
+          return [];
+        }
+        if (key === 'slates') {
+          let minNegVal = 0;
+          catScores.forEach(s => {
+            if (s[key] < minNegVal) minNegVal = s[key];
+          });
+          if (minNegVal === 0) return [];
+          return catScores.filter(s => s[key] === minNegVal).map(s => s.id);
+        }
+
+        return catScores.filter(s => s[key] === maxVal && maxVal > 0).map(s => s.id);
+      }
+
+      const generalTrackWinners = setup.owl ? [] : getMaxIds('generalTrack');
+      const owlTrackWinners = setup.owl ? getMaxIds('owlTrack') : [];
+      const idolWinners = getMaxIds('idols');
+      const guardianWinners = getMaxIds('guardians');
+      const cardWinners = getMaxIds('cards');
+      const fearWinners = getMaxIds('fearCount');
+      const slateWinners = setup.spider ? getMaxIds('slates') : [];
+
+      const titlesMap = {};
+      playersList.forEach(p => { titlesMap[p.id] = []; });
+
+      if (!setup.owl) {
+        generalTrackWinners.forEach(id => {
+          titlesMap[id].push({ icon: '🔍', name: '기록의 수집가', desc: '발견한 지식과 탐험의 흔적을 기록한 자' });
+        });
+      } else {
+        owlTrackWinners.forEach(id => {
+          titlesMap[id].push({ icon: '🏮', name: '어둠의 해독자', desc: '빛이 닿지 않는 유적의 비밀까지 밝혀낸 자' });
+        });
+      }
+
+      idolWinners.forEach(id => {
+        titlesMap[id].push({ icon: '🗿', name: '고대의 계승자', desc: '잊힌 문명의 유산을 손에 넣은 자' });
+      });
+
+      guardianWinners.forEach(id => {
+        titlesMap[id].push({ icon: '🪨', name: '수호자의 후계자', desc: '유적을 지키는 존재의 인정을 받은 자' });
+      });
+
+      cardWinners.forEach(id => {
+        titlesMap[id].push({ icon: '💼', name: '유산의 수집가', desc: '탐험의 여정에서 가장 많은 보물을 모은 자' });
+      });
+
+      fearWinners.forEach(id => {
+        titlesMap[id].push({ icon: '☠️', name: '저주받은 탐험가', desc: '두려움 속에서도 탐험을 이어간 자' });
+      });
+
+      if (setup.spider) {
+        slateWinners.forEach(id => {
+          titlesMap[id].push({ icon: '🔮', name: '암흑의 계승자', desc: '금지된 유적의 힘과 비밀을 받아들인 자' });
+        });
+      }
+
+      return titlesMap;
+    }
+
+    function showResult() {
+      document.getElementById('wizardScreen').style.display = 'none';
+      document.getElementById('resultScreen').style.display = 'flex';
+
+      triggerConfetti();
+
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
+      document.getElementById('resultDate').innerText = dateStr;
+
+      const sorted = [...players].map(p => ({ ...p, total: getPlayerTotal(p) })).sort((a,b) => b.total - a.total);
+
+      document.getElementById('winnerName').innerText = sorted[0].name;
+      document.getElementById('winnerScore').innerText = `${sorted[0].total}점`;
+
+      const playerTitles = calculatePlayerTitles(players);
+
+      const rankList = document.getElementById('rankList');
+      rankList.innerHTML = sorted.map((p, idx) => {
+        const titles = playerTitles[p.id] || [];
+        const hasTitles = titles.length > 0;
+
+        return `
+          <div class="rank-item" data-player-id="${p.id}">
+            <div class="rank-item-header">
+              <span class="rank-text-badge">${idx + 1}위</span>
+              <span class="rank-player-name" style="display:flex; align-items:center; gap:6px;">
+                <span class="player-dot" style="background:${p.color};"></span>
+                ${p.name}
+              </span>
+              <span class="rank-player-score">${p.total}점</span>
+            </div>
+            ${hasTitles ? `
+              <div class="player-titles-box">
+                ${titles.map(t => `
+                  <div class="title-badge-item">
+                    <div class="title-header-row">
+                      <span class="title-badge-name">${t.icon} ${t.name}</span>
+                    </div>
+                    <div class="title-badge-desc">${t.desc}</div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+      
+      document.getElementById('globalCommentInput').value = '';
+      removePhoto();
+    }
+
+    function handlePhotoSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      document.getElementById('photoFileName').innerText = file.name;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        uploadedPhotoBase64 = e.target.result;
+        document.getElementById('photoPreviewImg').src = uploadedPhotoBase64;
+        document.getElementById('photoPreviewContainer').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removePhoto() {
+      uploadedPhotoBase64 = null;
+      document.getElementById('photoFileInput').value = '';
+      document.getElementById('photoFileName').innerText = '선택된 파일 없음';
+      document.getElementById('photoPreviewContainer').style.display = 'none';
+      document.getElementById('photoPreviewImg').src = '';
+    }
+
+    function editScores() {
+      document.getElementById('resultScreen').style.display = 'none';
+      document.getElementById('wizardScreen').style.display = 'flex';
+      currentStepIdx = wizardSteps.length - 1;
+      renderStep();
+    }
+
+    function saveRecord() {
+      const playerTitles = calculatePlayerTitles(players);
+
+      const sorted = [...players].map(p => ({ 
+        id: p.id,
+        name: p.name, 
+        color: p.color,
+        score: getPlayerTotal(p),
+        titles: playerTitles[p.id] || []
+      })).sort((a,b) => b.score - a.score);
+
+      const globalComment = document.getElementById('globalCommentInput').value.trim();
+
+      const now = new Date();
+      const record = {
+        id: Date.now(),
+        date: `${now.getMonth() + 1}월 ${now.getDate()}일 ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`,
+        scores: sorted,
+        comment: globalComment,
+        photo: uploadedPhotoBase64
+      };
+
+      const history = JSON.parse(localStorage.getItem('arnak_wizard_history') || '[]');
+      history.unshift(record);
+      localStorage.setItem('arnak_wizard_history', JSON.stringify(history));
+
+      alert('원정 기록이 성공적으로 저장되었습니다!');
+    }
+
+    function openHistory() {
+      const history = JSON.parse(localStorage.getItem('arnak_wizard_history') || '[]');
+      const container = document.getElementById('historyList');
+
+      if (history.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:#95b3b9; padding:20px;">저장된 기록이 없습니다.</div>';
+      } else {
+        container.innerHTML = history.map(item => `
+          <div class="history-card">
+            <div class="history-header">
+              <span>${item.date}</span>
+              <button class="btn-del" onclick="deleteRecord(${item.id})">삭제</button>
+            </div>
+            <div class="history-ranks">
+              ${item.scores.map((s, idx) => `
+                <div class="history-rank-row">
+                  <div class="history-rank-main">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span class="rank-label">${idx + 1}위</span> 
+                      <span class="player-dot" style="background:${s.color || '#95b3b9'};"></span>
+                      <span>${s.name}</span>
+                    </div>
+                    <b>${s.score}점</b>
+                  </div>
+                  ${s.titles && s.titles.length > 0 ? `
+                    <div class="history-titles-inline">
+                      ${s.titles.map(t => `<span class="history-title-chip">${t.icon} ${t.name}</span>`).join('')}
+                    </div>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+            ${item.comment ? `<div class="history-global-comment">"${item.comment}"</div>` : ''}
+            ${item.photo ? `
+              <div class="history-photo-thumb" onclick="window.open('${item.photo}')" title="클릭하면 크게 볼 수 있습니다">
+                <img src="${item.photo}" alt="원정 사진">
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('historyModal').style.display = 'flex';
+    }
+
+    function closeHistory() {
+      document.getElementById('historyModal').style.display = 'none';
+    }
+
+    function deleteRecord(id) {
+      let history = JSON.parse(localStorage.getItem('arnak_wizard_history') || '[]');
+      history = history.filter(x => x.id !== id);
+      localStorage.setItem('arnak_wizard_history', JSON.stringify(history));
+      openHistory();
+    }
+
+    function resetToSetup() {
+      document.getElementById('resultScreen').style.display = 'none';
+      document.getElementById('setupScreen').style.display = 'flex';
+    }
+  </script>
+</body>
+</html>
